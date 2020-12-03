@@ -4,9 +4,6 @@ import datetime
 from settings import get_setting
 from decimal import Decimal
 
-#DATA_STALE_TIMEOUT = 5 # Timeout in minutes
-#SLOGIN = '1600737324' # Authentication
-
 ts_data_cache = dict() # Contains a tuple of (timestamp, header, contracts)
 
 urlmask = "https://www.stockoptionschannel.com/symbol/?symbol=%s&month=%s&type=%s"

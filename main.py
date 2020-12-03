@@ -23,11 +23,9 @@ MONTHS_CSV = DATA_DIR + "months.csv"
 SYMBOL_CSV = DATA_DIR + "symbols.csv"
 SETTINGS_CSV = DATA_DIR + "settings.csv"
 
-
 pattern = re.compile("\s+|\s*,\s*")
 
 today = datetime.date.today()
-#MIN_TIME_DIFFERENCE = 1; # TODO: Add settings
 
 # LIST MANIPLUATION
 

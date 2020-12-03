@@ -1,8 +1,5 @@
 from settings import get_setting
 
-#MIN_PERCENT_RETURN = 0.03
-#FILTER_PROBABILITY = 79
-
 # TODO: put/call debit spreads
 
 def put_credit_spreads(price, puts, best_only=True):

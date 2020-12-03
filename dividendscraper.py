@@ -7,10 +7,6 @@ from decimal import Decimal
 from datetime import datetime
 from pprint import pprint
 
-#MIN_DIVIDEND_RETURN = 0.01
-#MAX_SHARE_PRICE = 100
-#DATA_STALE_TIMEOUT = 5 # Timeout in minutes
-
 class Document(object):
 
     def __init__(self):
