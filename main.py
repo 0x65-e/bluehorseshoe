@@ -3,6 +3,7 @@ from optionparser import *
 from dividendscraper import get_dividends
 from settings import get_setting, set_setting, read_settings, save_settings, print_settings, is_setting
 from csv import reader, writer
+from enum import Flag, auto
 import re
 import sys
 from os import path, makedirs
@@ -11,7 +12,7 @@ from os import path, makedirs
 
 lists = dict()
 symbols = set()
-types = [ "put", "call" ]
+_types = [ "put", "call" ]
 
 symbol_month = dict() 
 month_csv_modified = False
@@ -26,6 +27,11 @@ SETTINGS_CSV = DATA_DIR + "settings.csv"
 pattern = re.compile("\s+|\s*,\s*")
 
 today = datetime.date.today()
+
+class Mode(Flag):
+	SPREADS = auto()
+	OPTIONS = auto()
+	CALENDAR = auto()
 
 # LIST MANIPLUATION
 
@@ -47,9 +53,22 @@ def add_symbols(interest_list, symbols):
 # OUTPUT
 
 def print_spreads(type, spreads):
+	type = type.lower()
 	# TODO: Should reverse order for calls
 	for spread in spreads:
 		print("%.2f/%.2f %s: $%.2f/%.1f%% \t(%d%%; %.1f%% out)" % (spread[0], spread[1], type, spread[4], spread[5] * 100, spread[6], spread[7] * 100))
+	print("") # Newline
+	
+def print_options(type, price, options):
+	type = type.lower()
+	if type == "put":
+		for opt in options:
+			if (opt[0] > price): print("-", end='')
+			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.2f if put" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6]))
+	elif type == "call":
+		for opt in options:
+			if (opt[0] < price): print("-", end='')
+			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.1f%% if called" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6] * 100))
 	print("") # Newline
 	
 def print_list(name):
@@ -66,7 +85,10 @@ def print_dividends(dividends):
 def print_help():
 	print("""Available commands:
 	help				Print available commands
-	fetch [$STOCKS, LISTS]		Fetch and print spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
+	options [$STOCKS, LISTS]	Fetch and print options for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
+	spreads [$STOCKS, LISTS]	Fetch and print option spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
+	calendar [$STOCKS, LISTS]	Fetcha and print calendar spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
+	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
 	create [LISTS]			Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.
 	refresh				Refresh contract months for all tickers in all lists
 	add LIST [$STOCKS]		Add all tickers from $STOCKS to LIST. Lists may not contain duplicates
@@ -79,7 +101,7 @@ def print_help():
 	save				Save lists, months, and settings to persistent storage
 	exit or quit			Exit the program
 		
-	For commands which take multiple arguments of the same type (e.g. fetch, create, list), arguments may be separated by commas or spaces.""")
+	For commands which take multiple arguments of the same type (e.g. options, spreads, fetch, create, list), arguments may be separated by commas or spaces.""")
 
 
 """Tickers can be separated by spaces or commas, upper or lowercase, and may appear with or without a leading $. Lists are case sensitive. To get a ticker with the same name as one of your lists, change the case of the ticker or prefix it with a $. All arguments prefixed with $ are treated as tickers."""
@@ -100,13 +122,13 @@ def save_lists():
 
 # SCRAPING METHODS
 
-def fetch_spreads(symbols, no_lists=False):
+def fetch_multiple(symbols, instruments, no_lists=False):
 	global month_csv_modified
 	for symbol in symbols:
 	
 		# Indirect lists
 		if not no_lists and not symbol[0] == "$" and symbol in lists.keys():
-			fetch_spreads(lists[symbol], True)
+			fetch_multiple(lists[symbol], instruments, True)
 			continue
 			
 		symbol = symbol.strip("$")
@@ -125,20 +147,27 @@ def fetch_spreads(symbols, no_lists=False):
 			symbol_month[symbol] = symbol_month[symbol][1:]
 			month_csv_modified = True
 			
-		for type in types:
+		for type in _types:
 
-			(price, spreads) = get_contracts(symbol, month, type)
+			(price, options) = get_contracts(symbol, month, type)
 			
-			if (type == "put"):
-				put_cred = put_credit_spreads(price, spreads, not get_setting("PRINT_ALL"))
+			if (instruments & Mode.OPTIONS):
+				options = filter_options(type, price, options)
+				print_options(type, price, options)
+			
+			if (instruments & Mode.SPREADS): # TODO: Not working properly in fetch
+				if (type == "put"):
+					put_cred = put_credit_spreads(price, options, not get_setting("PRINT_ALL"))
 
-				print_spreads(type, put_cred)
-				
-				
-			if (type == "call"):
-				call_cred = call_credit_spreads(price, spreads, not get_setting("PRINT_ALL"))
-				
-				print_spreads(type, call_cred)
+					print_spreads(type, put_cred)
+					
+				if (type == "call"):
+					call_cred = call_credit_spreads(price, options, not get_setting("PRINT_ALL"))
+					
+					print_spreads(type, call_cred)
+			
+			if (instruments & Mode.CALENDAR):
+				print("Calendar spreads not implemented yet\n")
 
 
 def parse(cmd):
@@ -152,12 +181,27 @@ def parse(cmd):
 			update_months(symbol, symbol_month)
 			
 		month_csv_modified = True
-	elif cmd.startswith("fetch"):
-		symbols_list = [s for s in pattern.split(cmd[6:]) if s.strip("$")]
+	elif cmd.startswith("spreads"):
+		symbols_list = [s for s in pattern.split(cmd[7:]) if s.strip("$")]
 		# If no symbols, default to all (split will return [] in this case)
 		if not symbols_list:
 			symbols_list = lists.keys()
-		fetch_spreads(symbols_list)
+		fetch_multiple(symbols_list, Mode.SPREADS)
+	elif cmd.startswith("options"):
+		symbols_list = [s for s in pattern.split(cmd[7:]) if s.strip("$")]
+		if not symbols_list:
+			symbols_list = lists.keys()
+		fetch_multiple(symbols_list, Mode.OPTIONS)
+	elif cmd.startswith("calendar"):
+		symbols_list = [s for s in pattern.split(cmd[8:]) if s.strip("$")]
+		if not symbols_list:
+			symbols_list = lists.keys()
+		fetch_multiple(symbols_list, Mode.CALENDAR)
+	elif cmd.startswith("fetch"):
+		symbols_list = [s for s in pattern.split(cmd[5:]) if s.strip("$")]
+		if not symbols_list:
+			symbols_list = lists.keys()
+		fetch_multiple(symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
 	elif cmd.startswith("add"):
 		l = [s for s in pattern.split(cmd[4:]) if s.strip("$")]
 		if not l or l[0] not in lists.keys():

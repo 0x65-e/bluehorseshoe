@@ -3,7 +3,7 @@ from settings import get_setting
 # TODO: put/call debit spreads
 
 def put_credit_spreads(price, puts, best_only=True):
-	"""Calculates return for single contract put credit spreads
+	"""Calculates return for two contract put credit spreads
 	Returns [short strike, long strike, short premium, long premium, credit, percent return, odds, % from price]
 	"""
 	spreads = []
@@ -25,7 +25,7 @@ def put_credit_spreads(price, puts, best_only=True):
 	return spreads
 	
 def call_credit_spreads(price, calls, best_only=True):
-	"""Calculates return for single contract call credit spreads
+	"""Calculates return for two contract call credit spreads
 	Returns [short strike, long strike, short premium, long premium, credit, percent return, odds, % from price]
 	"""
 	spreads = []
@@ -46,3 +46,21 @@ def call_credit_spreads(price, calls, best_only=True):
 				spreads.append(best_round)
 				best_round = []
 	return spreads
+	
+def filter_options(type, price, options):
+	"""Filter bare options based on settings
+	Returns [strike, bid, ask, percent return, odds, % from price, return if called/cost basis if put]
+	"""
+	filtered = []
+	type = type.lower()
+	if type == "put":
+		for put in options:
+			#if (put[3] > get_setting("FILTER_PROBABILITY") and put[0] < price):
+			filtered.append([put[0], put[1], put[2], put[1]/put[0] * 100, put[3], (put[0] - price) / price, put[0] - put[1]])
+	elif type == "call":
+		for call in options:
+			filtered.append([call[0], call[1], call[2], call[1]/price * 100, call[3], (call[0] - price) / price, (call[0] - price + call[1]) / price])
+	else:
+		print("Unknown type %s" % type)
+	return filtered
+	
