@@ -77,6 +77,7 @@ def print_help():
 	settings			List all settings and current values
 	set SETTING VALUE		Set SETTING to VALUE, if SETTING is a valid setting (i.e. listed under 'settings')
 	save				Save lists, months, and settings to persistent storage
+	exit or quit			Exit the program
 		
 	For commands which take multiple arguments of the same type (e.g. fetch, create, list), arguments may be separated by commas or spaces.""")
 
@@ -99,13 +100,13 @@ def save_lists():
 
 # SCRAPING METHODS
 
-def fetch_multiple(symbols, no_lists=False):
+def fetch_spreads(symbols, no_lists=False):
 	global month_csv_modified
 	for symbol in symbols:
 	
 		# Indirect lists
 		if not no_lists and not symbol[0] == "$" and symbol in lists.keys():
-			fetch_multiple(lists[symbol], True)
+			fetch_spreads(lists[symbol], True)
 			continue
 			
 		symbol = symbol.strip("$")
@@ -117,7 +118,7 @@ def fetch_multiple(symbols, no_lists=False):
 			update_months(symbol, symbol_month)
 			month_csv_modified = True
 			
-		# Make sure the date is more than a day away
+		# Make sure the date is more than MIN_TIME_DIFFERENCE away
 		month = symbol_month[symbol][0]
 		if (datetime.datetime.strptime(month, "%Y%m%d").date() - today < datetime.timedelta(get_setting("MIN_TIME_DIFFERENCE"))):
 			month = symbol_month[symbol][1]
@@ -126,17 +127,16 @@ def fetch_multiple(symbols, no_lists=False):
 			
 		for type in types:
 
-			# TODO: print next contract if too close to expiration
 			(price, spreads) = get_contracts(symbol, month, type)
 			
 			if (type == "put"):
-				put_cred = put_credit_spreads(price, spreads, not print_all)
+				put_cred = put_credit_spreads(price, spreads, not get_setting("PRINT_ALL"))
 
 				print_spreads(type, put_cred)
 				
 				
 			if (type == "call"):
-				call_cred = call_credit_spreads(price, spreads, not print_all)
+				call_cred = call_credit_spreads(price, spreads, not get_setting("PRINT_ALL"))
 				
 				print_spreads(type, call_cred)
 
@@ -157,7 +157,7 @@ def parse(cmd):
 		# If no symbols, default to all (split will return [] in this case)
 		if not symbols_list:
 			symbols_list = lists.keys()
-		fetch_multiple(symbols_list)
+		fetch_spreads(symbols_list)
 	elif cmd.startswith("add"):
 		l = [s for s in pattern.split(cmd[4:]) if s.strip("$")]
 		if not l or l[0] not in lists.keys():
@@ -233,7 +233,7 @@ def parse(cmd):
 			print("Requires both key and value")
 		elif is_setting(args[0]):
 			set_setting(args[0], args[1])
-			setting_csv_modified = True
+			save_settings(SETTINGS_CSV) # Save immediately, we don't want to risk a crash erasing settings
 		else:
 			print("%s is not a valid setting" % args[0])
 	elif cmd.strip() == "save":
@@ -286,9 +286,6 @@ if __name__ == "__main__":
 	
 	if not get_setting("SLOGIN"):
 		print("SLOGIN not set for options. Use 'set SLOGIN xxxxxxxxxx' to set.")
-
-	# Whether or not to print all spreads, or just the best spread at each short price
-	print_all = False # TODO: Settings
 	
 	running = True
 	

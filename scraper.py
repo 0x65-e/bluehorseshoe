@@ -4,7 +4,7 @@ import datetime
 from settings import get_setting
 from decimal import Decimal
 
-ts_data_cache = dict() # Contains a tuple of (timestamp, header, contracts)
+_ts_data_cache = dict() # Contains a tuple of (timestamp, header, contracts)
 
 urlmask = "https://www.stockoptionschannel.com/symbol/?symbol=%s&month=%s&type=%s"
 
@@ -16,11 +16,11 @@ def get_contracts(symbol, month, type):
 	print(target)
 		
 	key = "%s-%s-%s" % (symbol, month, type)
-	if key in ts_data_cache and (datetime.datetime.now() - ts_data_cache[key][0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):
-		header = ts_data_cache[key][1]
+	if key in _ts_data_cache and (datetime.datetime.now() - _ts_data_cache[key][0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):
+		header = _ts_data_cache[key][1]
 		print(header)
 		price = Decimal(header[header.find("Last:")+6:header.find(" , ")])
-		return (price, ts_data_cache[key][2])
+		return (price, _ts_data_cache[key][2])
 	
 	# Request
 	response = requests.get(target, cookies={'slogin' : get_setting("SLOGIN")})
@@ -46,7 +46,7 @@ def get_contracts(symbol, month, type):
 	# Grab price
 	price = Decimal(header[header.find("Last:")+6:header.find(" , ")])
 	
-	ts_data_cache[key] = (datetime.datetime.now(), header, contracts)
+	_ts_data_cache[key] = (datetime.datetime.now(), header, contracts)
 	
 	return (price, contracts)
 	
@@ -56,7 +56,7 @@ def update_months(symbol, symbol_month):
 	target = "https://www.stockoptionschannel.com/symbol/?symbol=%s" % (symbol.strip("$"))
 					
 	# Request
-	response = requests.get(target, cookies={'slogin' : SLOGIN})
+	response = requests.get(target, cookies={'slogin' : get_setting("SLOGIN")})
 	xhtml = response.text
 
 	# Decode
