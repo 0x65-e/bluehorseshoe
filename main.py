@@ -311,6 +311,9 @@ if __name__ == "__main__":
 	if not path.exists(DATA_DIR):
 		print("Building data dir")
 		makedirs(DATA_DIR)
+		
+		
+	read_settings(SETTINGS_CSV) # Read settings first to get SLOGIN, otherwise getting contract months will fail
 
 	# Load symbols of interest
 	if path.exists(SYMBOL_CSV):
@@ -347,8 +350,6 @@ if __name__ == "__main__":
 					month_csv_modified = True
 				else:
 					print_invalid_error(symbol)
-				
-	read_settings(SETTINGS_CSV)
 	
 	if not get_setting("SLOGIN"):
 		print("SLOGIN not set for options. Use 'set SLOGIN xxxxxxxxxx' to set.")

@@ -61,7 +61,11 @@ def update_months(symbol, symbol_month):
 	
 	if "No quote data found for" in xhtml:
 		return False
-
+		
+	if "You have viewed 6 pages within the last 6 hours." in xhtml:
+		print("Set SLOGIN before continuing")
+		return False
+		
 	# Decode
 	parser = HTMLTableParser()
 	parser.feed(xhtml)
