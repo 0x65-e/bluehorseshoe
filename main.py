@@ -93,10 +93,15 @@ def print_invalid_error(ticker):
 def print_help():
 	print("""Available commands:
 	help				Print available commands
-	options [$STOCKS, LISTS]	Fetch and print options for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
-	spreads [$STOCKS, LISTS]	Fetch and print option spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
-	calendar [$STOCKS, LISTS]	Fetcha and print calendar spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
-	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments. If no arguments are provided, fetch all lists.
+	options [$STOCKS, LISTS]	Fetch and print options for all tickers or lists provided as arguments.
+						If no arguments are provided, fetch all lists.
+	spreads [$STOCKS, LISTS]	Fetch and print option spreads for all tickers or lists provided as arguments. 
+						If no arguments are provided, fetch all lists.
+	calendar [$STOCKS, LISTS]	Fetch and print calendar spreads for all tickers or lists provided as arguments.
+						If no arguments are provided, fetch all lists.
+	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments. 
+						If no arguments are provided, fetch all lists.
+	[$STOCKS]			Same as fetch [$STOCKS]. The first stock must start with a $
 	create [LISTS]			Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.
 	refresh				Refresh contract months for all tickers in all lists
 	add LIST [$STOCKS]		Add all tickers from $STOCKS to LIST. Lists may not contain duplicates
@@ -215,6 +220,11 @@ def parse(cmd):
 		fetch_multiple(symbols_list, Mode.CALENDAR)
 	elif cmd.startswith("fetch"):
 		symbols_list = [s for s in pattern.split(cmd[5:]) if s.strip("$")]
+		if not symbols_list:
+			symbols_list = lists.keys()
+		fetch_multiple(symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
+	elif cmd.startswith("$"): # Assume fetch command if only symbols are given
+		symbols_list = [s for s in pattern.split(cmd) if s.strip("$")]
 		if not symbols_list:
 			symbols_list = lists.keys()
 		fetch_multiple(symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
