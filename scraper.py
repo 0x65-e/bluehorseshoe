@@ -52,12 +52,15 @@ def get_contracts(symbol, month, type):
 	
 
 def update_months(symbol, symbol_month):
-	"""Gets the available contract months for symbol and stores it as string:list pair in symbol_month"""
+	"""Gets the available contract months for symbol and stores it as string:list pair in symbol_month. Returns false if the symbol is not valid, and true if it (and updates months)"""
 	target = "https://www.stockoptionschannel.com/symbol/?symbol=%s" % (symbol.strip("$"))
 					
 	# Request
 	response = requests.get(target, cookies={'slogin' : get_setting("SLOGIN")})
 	xhtml = response.text
+	
+	if "No quote data found for" in xhtml:
+		return False
 
 	# Decode
 	parser = HTMLTableParser()
@@ -68,3 +71,5 @@ def update_months(symbol, symbol_month):
 	dates = [ datetime.datetime.strptime(entry[0], "%B %d, %Y").strftime("%Y%m%d") for entry in entries ]
 	
 	symbol_month[symbol] = dates
+	
+	return True

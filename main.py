@@ -1,4 +1,4 @@
-from scraper import * 
+from scraper import get_contracts, update_months
 from optionparser import *
 from dividendscraper import get_dividends
 from settings import get_setting, set_setting, read_settings, save_settings, print_settings, is_setting
@@ -6,6 +6,7 @@ from csv import reader, writer
 from enum import Flag, auto
 import re
 import sys
+import datetime
 from os import path, makedirs
 
 # TODO: Calendar support
@@ -82,6 +83,13 @@ def print_dividends(dividends):
 		print("%s (%s): %s %.2f/%.2f (%.2f%%)" % (d[1], d[0], d[2], d[3], d[4], d[5] * 100))
 	print("") # Newline
 
+def print_invalid_error(ticker):
+	err_string = "| %s is not a valid stock ticker |" % ticker.upper()
+	line_string = " " + "-" * (len(err_string) - 2)
+	print(line_string)
+	print(err_string)
+	print(line_string, "\n")
+
 def print_help():
 	print("""Available commands:
 	help				Print available commands
@@ -137,8 +145,11 @@ def fetch_multiple(symbols, instruments, no_lists=False):
 	
 		# Get months if absent
 		if symbol not in symbol_month.keys():
-			update_months(symbol, symbol_month)
-			month_csv_modified = True
+			if update_months(symbol, symbol_month):
+				month_csv_modified = True
+			else:
+				print_invalid_error(symbol)
+				continue
 			
 		# Make sure the date is more than MIN_TIME_DIFFERENCE away
 		month = symbol_month[symbol][0]
@@ -182,7 +193,8 @@ def parse(cmd):
 		print("Refreshing contract months...")
 		# Get the next contract for each symbol
 		for symbol in symbols:
-			update_months(symbol, symbol_month)
+			if not update_months(symbol, symbol_month):
+				print_invalid_error(symbol)
 			
 		month_csv_modified = True
 	elif cmd.startswith("spreads"):
@@ -312,7 +324,9 @@ if __name__ == "__main__":
 		print("Refreshing contract months...")
 		# Fetch the next contract for each symbol
 		for symbol in symbols:
-			update_months(symbol, symbol_month)
+			if not update_months(symbol, symbol_month):
+				print_invalid_error(symbol)
+				# Remove symbol from lists automatically?
 		# Save immediately
 		save_months()
 	else:
@@ -321,14 +335,18 @@ if __name__ == "__main__":
 		for row in r:
 			if (len(row) < 2):
 				# If there are no months, retry getting them
-				update_months(row[0], symbol_month)
-				month_csv_modified = True
+				if update_months(row[0], symbol_month):
+					month_csv_modified = True
+				else:
+					print_invalid_error(symbol)
 			else:
 				symbol_month[row[0]] = row[1:]
 		for symbol in symbols:
 			if symbol not in symbol_month.keys() or not symbol_month[symbol]:
-				update_months(symbol, symbol_month)
-				month_csv_modified = True
+				if update_months(symbol, symbol_month):
+					month_csv_modified = True
+				else:
+					print_invalid_error(symbol)
 				
 	read_settings(SETTINGS_CSV)
 	

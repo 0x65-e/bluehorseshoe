@@ -16,7 +16,7 @@ class Document(object):
         self.value += ''.join(str(i) for i in args)
 		
 
-cache = tuple()
+_dividend_cache = tuple()
 
 # Necessary variables for JS evaluation
 variables = """var TTI_fontFace        = 'Arial';      // The font face to use in the table
@@ -44,9 +44,9 @@ def get_dividends():
 	Gets tickers with dividends that end trading today (i.e. ex-dividend date tomorrow)
 	Return value is a sorted (high->low by percent) of [symbol, name, type: {Q/M/A/S}, dividend, current price, return, ex-date (datetime), payment date (string)]
 	"""
-	global cache
-	if cache and (datetime.now() - cache[0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):
-		return cache[1]
+	global _dividend_cache
+	if _dividend_cache and (datetime.now() - _dividend_cache[0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):
+		return _dividend_cache[1]
 	
 	target = "https://secure.tickertech.com/bnkinvest/custom.js"
 
@@ -88,8 +88,6 @@ def get_dividends():
 	dividends.sort(key=lambda x: x[5])
 	dividends.reverse()
 	
-	cache = (datetime.now(), dividends)
+	_dividend_cache = (datetime.now(), dividends)
 
 	return dividends
-
-
