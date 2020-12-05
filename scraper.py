@@ -13,7 +13,7 @@ def get_contracts(symbol, month, type):
 	Returns (price, [contracts]) where each contract is [strike, bid, ask, odds]
 	"""
 	target = urlmask % (symbol.strip("$"), month, type)
-	print(target)
+	if(get_setting("DEBUG")): print(target)
 		
 	key = "%s-%s-%s" % (symbol, month, type)
 	if key in _ts_data_cache and (datetime.datetime.now() - _ts_data_cache[key][0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):

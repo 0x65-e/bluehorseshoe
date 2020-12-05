@@ -149,22 +149,26 @@ def fetch_multiple(symbols, instruments, no_lists=False):
 			
 		for type in _types:
 
-			(price, options) = get_contracts(symbol, month, type)
+			(price, options) = get_contracts(symbol, month, type) # Prints url and header
+			print("") # New line
 			
 			if (instruments & Mode.OPTIONS):
-				options = filter_options(type, price, options)
-				print_options(type, price, options)
+				filtered_options = filter_options(type, price, options)
+				
+				if (filtered_options):
+					print("--%s options--" % type.capitalize())
+					print_options(type, price, filtered_options)
+				else:
+					print("No %s options\n" % type.capitalize())
 			
-			if (instruments & Mode.SPREADS): # TODO: Not working properly in fetch
-				if (type == "put"):
-					put_cred = put_credit_spreads(price, options, not get_setting("PRINT_ALL"))
-
-					print_spreads(type, put_cred)
-					
-				if (type == "call"):
-					call_cred = call_credit_spreads(price, options, not get_setting("PRINT_ALL"))
-					
-					print_spreads(type, call_cred)
+			if (instruments & Mode.SPREADS):
+				cred_spreads = credit_spreads(price, type, options, not get_setting("PRINT_ALL"))
+				
+				if (cred_spreads):
+					print("--%s spreads--" % type.capitalize())
+					print_spreads(type, cred_spreads)
+				else:
+					print("No %s spreads\n" % type.capitalize())
 			
 			if (instruments & Mode.CALENDAR):
 				print("Calendar spreads not implemented yet\n")

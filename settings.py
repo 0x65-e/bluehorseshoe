@@ -15,6 +15,8 @@ _settings = {
 	"MIN_DIVIDEND_RETURN" : [0.01, float, "Minimum percent return for dividend plays to be considered"],
 	"MAX_DIV_SHARE_PRICE" : [100, int, "Maximum share price for dividend plays to be considered"],
 	"PRINT_ALL" : [False, str_to_bool, "Print all spreads, not just the best at each price point"],
+	"DEBUG" : [False, str_to_bool, "Print copious debugging messages"],
+	"MAX_CALENDAR_MONTHS" : [5, int, "Maximum number of contracts (not necessarily months) to consider for calendar spreads"],
 	}
 
 
