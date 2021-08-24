@@ -85,8 +85,7 @@ def get_dividends():
 		if (entry[6] > datetime.now()) and entry[5] > get_setting("MIN_DIVIDEND_RETURN") and entry[4] < get_setting("MAX_DIV_SHARE_PRICE"):
 			dividends.append(entry)
 
-	dividends.sort(key=lambda x: x[5])
-	dividends.reverse()
+	dividends.sort(key=lambda x: x[5], reverse=True)
 	
 	_dividend_cache = (datetime.now(), dividends)
 

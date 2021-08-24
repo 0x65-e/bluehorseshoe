@@ -16,10 +16,11 @@ def credit_spreads(price, type, opts, best_only=True):
 			low = 0 if type == "put" else short+1
 			high = short if type == "put" else end
 			for long in range(low, high):
-				test_put = [ opt[0], opts[long][0], opt[1], opts[long][2], opt[1] - opts[long][2], (opt[1] - opts[long][2]) / abs(opt[0] - opts[long][0]), min(opt[3], opts[long][3]), abs(price - opt[0]) / price ]
+				collateral = abs(opt[0] - opts[long][0])
+				test_put = [ opt[0], opts[long][0], opt[1], opts[long][2], opt[1] - opts[long][2], (opt[1] - opts[long][2]) / collateral, min(opt[3], opts[long][3]), abs(price - opt[0]) / price ]
 				if (test_put[5] > get_setting("MIN_OPTION_RETURN")):
 					if (best_only):
-						if (not best_round or test_put[5] > best_round[5]):
+						if ((not best_round or test_put[5] > best_round[5]) and collateral <= get_setting("MAX_SPREAD_COLLATERAL") / 100):
 							best_round = test_put.copy()
 					else:
 						spreads.append(test_put)

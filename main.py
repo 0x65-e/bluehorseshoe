@@ -93,21 +93,17 @@ def print_invalid_error(ticker):
 def print_help():
 	print("""Available commands:
 	help				Print available commands
-	options [$STOCKS, LISTS]	Fetch and print options for all tickers or lists provided as arguments.
-						If no arguments are provided, fetch all lists.
-	spreads [$STOCKS, LISTS]	Fetch and print option spreads for all tickers or lists provided as arguments. 
-						If no arguments are provided, fetch all lists.
-	calendar [$STOCKS, LISTS]	Fetch and print calendar spreads for all tickers or lists provided as arguments.
-						If no arguments are provided, fetch all lists.
-	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments. 
-						If no arguments are provided, fetch all lists.
+	options [$STOCKS, LISTS]	Fetch and print options for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
+	spreads [$STOCKS, LISTS]	Fetch and print option spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
+	calendar [$STOCKS, LISTS]	Fetch and print calendar spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
+	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
 	[$STOCKS]			Same as fetch [$STOCKS]. The first stock must start with a $
 	create [LISTS]			Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.
 	refresh				Refresh contract months for all tickers in all lists
 	add LIST [$STOCKS]		Add all tickers from $STOCKS to LIST. Lists may not contain duplicates
 	delete LIST [$STOCKS]		Delete all tickers from $STOCKS from LIST if present
 	list [LISTS]			Print the contents of all lists from LISTS. If no lists are provided, print the contents of all lists.
-	list_months			Print the front contract month for all tickers in any list
+	list_months [LISTS]		Print the front contract month for all tickers in the given lists. If no lists are provided, print all lists.
 	dividends			List stocks with ex-dividend days tomorrow
 	settings			List all settings and current values
 	set SETTING VALUE		Set SETTING to VALUE, if SETTING is a valid setting (i.e. listed under 'settings')
@@ -158,7 +154,7 @@ def fetch_multiple(symbols, instruments, no_lists=False):
 			
 		# Make sure the date is more than MIN_TIME_DIFFERENCE away
 		month = symbol_month[symbol][0]
-		if (datetime.datetime.strptime(month, "%Y%m%d").date() - today < datetime.timedelta(get_setting("MIN_TIME_DIFFERENCE"))):
+		while (datetime.datetime.strptime(month, "%Y%m%d").date() - today < datetime.timedelta(get_setting("MIN_TIME_DIFFERENCE"))):
 			month = symbol_month[symbol][1]
 			symbol_month[symbol] = symbol_month[symbol][1:]
 			month_csv_modified = True
@@ -188,6 +184,9 @@ def fetch_multiple(symbols, instruments, no_lists=False):
 			
 			if (instruments & Mode.CALENDAR):
 				print("Calendar spreads not implemented yet\n")
+				
+	if month_csv_modified:
+		save_months()
 
 
 def parse(cmd):
@@ -244,7 +243,7 @@ def parse(cmd):
 			remove_symbols(lists[l[0]], l[1:])
 			symbol_csv_modified = True
 			print_list(l[0])
-	elif cmd.startswith("list"):
+	elif cmd.startswith("list") and not cmd.startswith("list_months"):
 		plists = [ s for s in pattern.split(cmd[5:]) if s]
 		# If no lists, default to all (split will return [] in this case)
 		if not plists:
@@ -286,9 +285,20 @@ def parse(cmd):
 					print("%s does not exist" % s)
 			else:
 				print("No list specified")
-	elif cmd.strip() == "list_months": # TODO: Split up by list
-		for s in symbols:
-			print("%s: %s" % (s, symbol_month[s][0]))
+	elif cmd.startswith("list_months"):
+		clists = [ s for s in pattern.split(cmd[12:]) if s]
+		# If no lists, default to all (split will return [] in this case)
+		if not clists:
+			for s in symbols:
+				print("%s: %s" % (s, symbol_month[s][0]))
+		else:
+			for list in clists:
+				if list not in lists.keys():
+					print("List %s not found" % list)
+					continue
+				print(list)
+				for symbol in lists[list]:
+					print("%s: %s" % (symbol, symbol_month[symbol][0]))
 	elif cmd.startswith("dividends"):
 		args = [s for s in pattern.split(cmd[9:]) if s]
 		if (args and args[0].isdigit()):
