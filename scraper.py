@@ -6,13 +6,14 @@ from decimal import Decimal
 
 _ts_data_cache = dict() # Contains a tuple of (timestamp, header, contracts)
 
-urlmask = "https://www.stockoptionschannel.com/symbol/?symbol=%s&month=%s&type=%s"
+contract_urlmask = "https://www.stockoptionschannel.com/symbol/?symbol=%s&month=%s&type=%s"
+watchlist_urlmask = "https://www.stockoptionschannel.com/?rpp=20&start=%d"
 
 def get_contracts(symbol, month, type):
 	"""Gets the contracts for a symbol at a particular month of one type (call or put).
 	Returns (price, [contracts]) where each contract is [strike, bid, ask, odds]
 	"""
-	target = urlmask % (symbol.strip("$"), month, type)
+	target = contract_urlmask % (symbol.strip("$"), month, type)
 	if(get_setting("DEBUG")): print(target)
 		
 	key = "%s-%s-%s" % (symbol, month, type)
@@ -77,3 +78,26 @@ def update_months(symbol, symbol_month):
 	symbol_month[symbol] = dates
 	
 	return True
+
+
+def get_daily_watchlist():
+	"""Gets the daily watchlist for both puts and calls. Returns a list of symbols only, not contracts"""
+	
+	symbols = set() # Remove duplicates
+	
+	for i in (0, 1):
+		target = watchlist_urlmask % i
+		# Request
+		response = requests.get(target, cookies={'slogin' : get_setting("SLOGIN")})
+		xhtml = response.text
+
+		# Decode
+		parser = HTMLTableParser()
+		parser.feed(xhtml)
+		
+		# Add symbols to list
+		for t in (9, 11):
+			contract_list = parser.tables[t][2:-1]
+			symbols.update([ contract[0] for contract in contract_list ])
+	
+	return list(symbols)

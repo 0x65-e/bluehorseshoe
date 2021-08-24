@@ -1,4 +1,4 @@
-from scraper import get_contracts, update_months
+from scraper import get_contracts, update_months, get_daily_watchlist
 from optionparser import *
 from dividendscraper import get_dividends
 from settings import get_setting, set_setting, read_settings, save_settings, print_settings, is_setting
@@ -65,11 +65,11 @@ def print_options(type, price, options):
 	if type == "put":
 		for opt in options:
 			if (opt[0] > price): print("-", end='')
-			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.2f if put" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6]))
+			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.2f cost basis if put" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6]))
 	elif type == "call":
 		for opt in options:
 			if (opt[0] < price): print("-", end='')
-			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.1f%% if called" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6] * 100))
+			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.1f%% return if called" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6] * 100))
 	print("") # Newline
 	
 def print_list(name):
@@ -98,6 +98,7 @@ def print_help():
 	calendar [$STOCKS, LISTS]	Fetch and print calendar spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
 	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
 	[$STOCKS]			Same as fetch [$STOCKS]. The first stock must start with a $
+	report OR daily			Fetch a list of daily selected stocks
 	create [LISTS]			Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.
 	refresh				Refresh contract months for all tickers in all lists
 	add LIST [$STOCKS]		Add all tickers from $STOCKS to LIST. Lists may not contain duplicates
@@ -224,9 +225,11 @@ def parse(cmd):
 		fetch_multiple(symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
 	elif cmd.startswith("$"): # Assume fetch command if only symbols are given
 		symbols_list = [s for s in pattern.split(cmd) if s.strip("$")]
-		if not symbols_list:
-			symbols_list = lists.keys()
 		fetch_multiple(symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
+	elif cmd.strip() == "report" or cmd.strip() == "daily" or cmd.strip() == "daily_report":
+		daily_symbols_list = get_daily_watchlist()
+		print(daily_symbols_list)
+		fetch_multiple(daily_symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
 	elif cmd.startswith("add"):
 		l = [s for s in pattern.split(cmd[4:]) if s.strip("$")]
 		if not l or l[0] not in lists.keys():
