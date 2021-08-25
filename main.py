@@ -100,9 +100,10 @@ def print_help():
 	[$STOCKS]			Same as fetch [$STOCKS]. The first stock must start with a $
 	report OR daily			Fetch a list of daily selected stocks
 	create [LISTS]			Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.
+	delete [LISTS]			Deletes each provided list, if it exists. Asks for confirmation for non-empty lists.
 	refresh				Refresh contract months for all tickers in all lists
 	add LIST [$STOCKS]		Add all tickers from $STOCKS to LIST. Lists may not contain duplicates
-	delete LIST [$STOCKS]		Delete all tickers from $STOCKS from LIST if present
+	remove LIST [$STOCKS]		Delete all tickers from $STOCKS from LIST if present
 	list [LISTS]			Print the contents of all lists from LISTS. If no lists are provided, print the contents of all lists.
 	list_months [LISTS]		Print the front contract month for all tickers in the given lists. If no lists are provided, print all lists.
 	dividends			List stocks with ex-dividend days tomorrow
