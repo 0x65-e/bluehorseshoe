@@ -343,6 +343,8 @@ if __name__ == "__main__":
 	if path.exists(SYMBOL_CSV):
 		r = reader(open(SYMBOL_CSV, "r", newline=''))
 		for row in r:
+			if len(row) == 0:
+				continue # Ignore empty rows if they exist
 			lists[row[0]] = set(row[1:])
 			symbols.update(row[1:])
 
@@ -360,12 +362,14 @@ if __name__ == "__main__":
 		# Load from stored dictionary
 		r = reader(open(MONTHS_CSV, "r", newline=''))
 		for row in r:
-			if (len(row) < 2):
+			if len(row) == 0:
+				continue # Ignore empty rows, if they exist for some reason
+			if len(row) == 1:
 				# If there are no months, retry getting them
 				if update_months(row[0], symbol_month):
 					month_csv_modified = True
 				else:
-					print_invalid_error(symbol)
+					print_invalid_error(row[0])
 			else:
 				symbol_month[row[0]] = row[1:]
 		for symbol in symbols:
@@ -389,7 +393,7 @@ if __name__ == "__main__":
 	while (running):
 		cmd = input("opt>")
 		if cmd == "exit" or cmd == "quit":
-			running = False;
+			running = False
 			print("quitting...")
 		else:
 			parse(cmd)
