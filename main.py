@@ -121,15 +121,17 @@ def print_help():
 
 def save_months():
 	# Store to dictionary on disk
-	w = writer(open(MONTHS_CSV, "w", newline=''))
-	for key, val in symbol_month.items():
-		w.writerow([key] + val)
+	with open(MONTHS_CSV, "w", newline='') as f:
+		w = writer(f)
+		for key, val in symbol_month.items():
+			w.writerow([key] + val)
 		
 def save_lists():
 	# Store to dictionary on disk
-	w = writer(open(SYMBOL_CSV, "w", newline=''))
-	for key, val in lists.items():
-		w.writerow([key] + list(val))
+	with open(SYMBOL_CSV, "w", newline='') as f:
+		w = writer(f)
+		for key, val in lists.items():
+			w.writerow([key] + list(val))
 
 # SCRAPING METHODS
 
@@ -341,12 +343,13 @@ if __name__ == "__main__":
 
 	# Load symbols of interest
 	if path.exists(SYMBOL_CSV):
-		r = reader(open(SYMBOL_CSV, "r", newline=''))
-		for row in r:
-			if len(row) == 0:
-				continue # Ignore empty rows if they exist
-			lists[row[0]] = set(row[1:])
-			symbols.update(row[1:])
+		with open(SYMBOL_CSV, "r", newline='') as f:
+			r = reader(f)
+			for row in r:
+				if len(row) == 0:
+					continue # Ignore empty rows if they exist
+				lists[row[0]] = set(row[1:])
+				symbols.update(row[1:])
 
 	# Load up the front contract for each symbol (fetch if absent)
 	if not path.exists(MONTHS_CSV):
@@ -360,18 +363,20 @@ if __name__ == "__main__":
 		save_months()
 	else:
 		# Load from stored dictionary
-		r = reader(open(MONTHS_CSV, "r", newline=''))
-		for row in r:
-			if len(row) == 0:
-				continue # Ignore empty rows, if they exist for some reason
-			if len(row) == 1:
-				# If there are no months, retry getting them
-				if update_months(row[0], symbol_month):
-					month_csv_modified = True
+		with open(MONTHS_CSV, "r", newline='') as f:
+			r = reader(f)
+			for row in r:
+				if len(row) == 0:
+					continue # Ignore empty rows, if they exist for some reason
+				if len(row) == 1:
+					# If there are no months, retry getting them
+					if update_months(row[0], symbol_month):
+						month_csv_modified = True
+					else:
+						print_invalid_error(row[0])
 				else:
-					print_invalid_error(row[0])
-			else:
-				symbol_month[row[0]] = row[1:]
+					symbol_month[row[0]] = row[1:]
+		# Refresh any symbols that had no listed contract months
 		for symbol in symbols:
 			if symbol not in symbol_month.keys() or not symbol_month[symbol]:
 				if update_months(symbol, symbol_month):
