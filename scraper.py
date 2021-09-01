@@ -9,21 +9,34 @@ _ts_data_cache = dict() # Contains a tuple of (timestamp, header, contracts)
 contract_urlmask = "https://www.stockoptionschannel.com/symbol/?symbol=%s&month=%s&type=%s"
 watchlist_urlmask = "https://www.stockoptionschannel.com/?rpp=20&start=%d"
 
+def get_header(symbol, month, type="call"):
+	"""Gets the header (consisting of symbol, current price, and change) for the given symbol."""
+	
+	# Check first for cached data
+	key = "%s-%s-%s" % (symbol, month, type)
+	if key in _ts_data_cache and (datetime.datetime.now() - _ts_data_cache[key][0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):
+		return _ts_data_cache[key][1]
+
+	# use get_contracts to request data
+	get_contracts(symbol, month, type)
+	# data should now be in cache
+	return _ts_data_cache[key][1]
+	
+
 def get_contracts(symbol, month, type):
 	"""Gets the contracts for a symbol at a particular month of one type (call or put).
 	Returns (price, [contracts]) where each contract is [strike, bid, ask, odds]
 	"""
 	target = contract_urlmask % (symbol.strip("$"), month, type)
-	if(get_setting("DEBUG")): print(target)
 		
 	key = "%s-%s-%s" % (symbol, month, type)
 	if key in _ts_data_cache and (datetime.datetime.now() - _ts_data_cache[key][0]).total_seconds() / 60 < get_setting("DATA_STALE_TIMEOUT"):
 		header = _ts_data_cache[key][1]
-		print(header)
 		price = Decimal(header[header.find("Last:")+6:header.find(" , ")])
 		return (price, _ts_data_cache[key][2])
 	
 	# Request
+	if(get_setting("DEBUG")): print(target)
 	response = requests.get(target, cookies={'slogin' : get_setting("SLOGIN")})
 	xhtml = response.text
 
@@ -42,7 +55,6 @@ def get_contracts(symbol, month, type):
 	start_index = header.find("(")
 	end_index = header.find(",  V")
 	header = header[start_index:end_index]
-	print(header)
 	
 	# Grab price
 	price = Decimal(header[header.find("Last:")+6:header.find(" , ")])

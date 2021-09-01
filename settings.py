@@ -18,6 +18,7 @@ _settings = {
 	"DEBUG" : [False, str_to_bool, "Print copious debugging messages"],
 	"MAX_CALENDAR_CONTRACTS" : [5, int, "Maximum number of contracts (not necessarily months) to consider for calendar spreads"],
 	"MAX_SPREAD_COLLATERAL" : [500, int, "Maximum collateral to consider a spread"],
+	"MAX_CONTRACT_PRICE" : [800, int, "Maximum amount to spend on a covered call or a put option"],
 	}
 
 

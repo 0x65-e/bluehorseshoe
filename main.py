@@ -1,4 +1,4 @@
-from scraper import get_contracts, update_months, get_daily_watchlist
+from scraper import get_header, get_contracts, update_months, get_daily_watchlist
 from optionparser import *
 from dividendscraper import get_dividends
 from settings import get_setting, set_setting, read_settings, save_settings, print_settings, is_setting
@@ -57,7 +57,7 @@ def print_spreads(type, spreads):
 	type = type.lower()
 	# TODO: Should reverse order for calls
 	for spread in spreads:
-		print("%.2f/%.2f %s: $%.2f/%.1f%% \t(%d%%; %.1f%% out)" % (spread[0], spread[1], type, spread[4], spread[5] * 100, spread[6], spread[7] * 100))
+		print("%.2f/%.2f %s: $%.2f/%.1f%% (%d%%; %.1f%% out)" % (spread[0], spread[1], type, spread[4], spread[5] * 100, spread[6], spread[7] * 100))
 	print("") # Newline
 	
 def print_options(type, price, options):
@@ -65,11 +65,11 @@ def print_options(type, price, options):
 	if type == "put":
 		for opt in options:
 			if (opt[0] > price): print("-", end='')
-			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.2f cost basis if put" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6]))
+			print("%.2f %s: %.2f/%.1f%% (%d%%; %.1f%% out) %.2f cost basis if put" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6]))
 	elif type == "call":
 		for opt in options:
 			if (opt[0] < price): print("-", end='')
-			print("%.2f %s: %.2f/%.1f%% \t(%d%%; %.1f%% out) %.1f%% return if called" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6] * 100))
+			print("%.2f %s: %.2f/%.1f%% (%d%%; %.1f%% out) %.1f%% return if called" % (opt[0], type, opt[1], opt[3], opt[4], opt[5] * 100, opt[6] * 100))
 	print("") # Newline
 	
 def print_list(name):
@@ -135,13 +135,13 @@ def save_lists():
 
 # SCRAPING METHODS
 
-def fetch_multiple(symbols, instruments, no_lists=False):
+def fetch_multiple(symbols, instruments, no_lists=False, omit_empty=False):
 	global month_csv_modified
 	for symbol in symbols:
 	
 		# Indirect lists
 		if not no_lists and not symbol[0] == "$" and symbol in lists.keys():
-			fetch_multiple(lists[symbol], instruments, True)
+			fetch_multiple(lists[symbol], instruments, True, omit_empty)
 			continue
 			
 		symbol = symbol.strip("$")
@@ -165,29 +165,42 @@ def fetch_multiple(symbols, instruments, no_lists=False):
 			
 		for type in _types:
 
-			(price, options) = get_contracts(symbol, month, type) # Prints url and header
-			print("") # New line
+			header = get_header(symbol, month, type)
+			(price, options) = get_contracts(symbol, month, type)
+			filtered_options = cred_spreads = cal_spreads = None
 			
 			if (instruments & Mode.OPTIONS):
 				filtered_options = filter_options(type, price, options)
-				
-				if (filtered_options):
+			
+			if (instruments & Mode.SPREADS):
+				cred_spreads = credit_spreads(price, type, options, not get_setting("PRINT_ALL"))
+			
+			if (instruments & Mode.CALENDAR):
+				# Calendar spreads not implemented yet
+				pass
+
+			# Only print output if omit_empty is false, or if there is useful output to print
+			if not omit_empty or filtered_options or cred_spreads or cal_spreads:
+				print(header)
+				print("%s %s Contracts" % (month, type.capitalize()))
+				print() # Newline
+
+				if filtered_options:
 					print("--%s options--" % type.capitalize())
 					print_options(type, price, filtered_options)
 				else:
 					print("No %s options\n" % type.capitalize())
-			
-			if (instruments & Mode.SPREADS):
-				cred_spreads = credit_spreads(price, type, options, not get_setting("PRINT_ALL"))
-				
-				if (cred_spreads):
+
+				if cred_spreads:
 					print("--%s spreads--" % type.capitalize())
 					print_spreads(type, cred_spreads)
 				else:
 					print("No %s spreads\n" % type.capitalize())
-			
-			if (instruments & Mode.CALENDAR):
-				print("Calendar spreads not implemented yet\n")
+
+				if cal_spreads:
+					pass
+				else:
+					pass
 				
 	if month_csv_modified:
 		save_months()
@@ -232,7 +245,7 @@ def parse(cmd):
 	elif cmd.strip() == "report" or cmd.strip() == "daily" or cmd.strip() == "daily_report":
 		daily_symbols_list = get_daily_watchlist()
 		print(daily_symbols_list)
-		fetch_multiple(daily_symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
+		fetch_multiple(daily_symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR, True, True)
 	elif cmd.startswith("add"):
 		l = [s for s in pattern.split(cmd[4:]) if s.strip("$")]
 		if not l or l[0] not in lists.keys():

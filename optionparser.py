@@ -30,18 +30,21 @@ def credit_spreads(price, type, opts, best_only=True):
 	return spreads
 	
 def filter_options(type, price, options):
-	"""Filter bare options based on settings
+	"""Filter bare options based on settings. 
 	Returns [strike, bid, ask, percent return, odds, % from price, return if called/cost basis if put]
 	"""
 	filtered = []
 	type = type.lower()
 	if type == "put":
 		for put in options:
-			#if (put[3] > get_setting("FILTER_PROBABILITY") and put[0] < price):
-			filtered.append([put[0], put[1], put[2], put[1]/put[0] * 100, put[3], (put[0] - price) / price, put[0] - put[1]]) # TODO: Filter based on % return above threshhold and distance from price?
+			cost_basis =  put[0] - put[1]
+			if put[0] * 100 <= get_setting("MAX_CONTRACT_PRICE") and cost_basis < put[0]: # filter based on something?
+				filtered.append([put[0], put[1], put[2], put[1]/put[0] * 100, put[3], (put[0] - price) / price, cost_basis ])
 	elif type == "call":
 		for call in options:
-			filtered.append([call[0], call[1], call[2], call[1]/price * 100, call[3], (call[0] - price) / price, (call[0] - price + call[1]) / price]) # TODO: Filter based on % return if called > 0 and % return above threshhold
+			percent_return = (call[0] - price + call[1]) / price
+			if call[0] * 100 <= get_setting("MAX_CONTRACT_PRICE") and percent_return >= get_setting("MIN_OPTION_RETURN"):
+				filtered.append([call[0], call[1], call[2], call[1]/price * 100, call[3], (call[0] - price) / price, percent_return ])
 	else:
 		print("Unknown type %s" % type)
 	return filtered
