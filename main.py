@@ -244,7 +244,8 @@ def parse(cmd):
 		fetch_multiple(symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR)
 	elif cmd.strip() == "report" or cmd.strip() == "daily" or cmd.strip() == "daily_report":
 		daily_symbols_list = get_daily_watchlist()
-		print(daily_symbols_list)
+		if get_setting("DEBUG"):
+			print(daily_symbols_list)
 		fetch_multiple(daily_symbols_list, Mode.SPREADS | Mode.OPTIONS | Mode.CALENDAR, True, True)
 	elif cmd.startswith("add"):
 		l = [s for s in pattern.split(cmd[4:]) if s.strip("$")]

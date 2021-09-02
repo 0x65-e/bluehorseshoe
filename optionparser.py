@@ -38,12 +38,12 @@ def filter_options(type, price, options):
 	if type == "put":
 		for put in options:
 			cost_basis =  put[0] - put[1]
-			if put[0] * 100 <= get_setting("MAX_CONTRACT_PRICE") and cost_basis < put[0]: # filter based on something?
+			if put[0] * 100 <= get_setting("MAX_CONTRACT_PRICE") and cost_basis < price and put[1] != 0: # filter based on something?
 				filtered.append([put[0], put[1], put[2], put[1]/put[0] * 100, put[3], (put[0] - price) / price, cost_basis ])
 	elif type == "call":
 		for call in options:
 			percent_return = (call[0] - price + call[1]) / price
-			if call[0] * 100 <= get_setting("MAX_CONTRACT_PRICE") and percent_return >= get_setting("MIN_OPTION_RETURN"):
+			if call[0] * 100 <= get_setting("MAX_CONTRACT_PRICE") and percent_return >= get_setting("MIN_OPTION_RETURN") and call[1] != 0:
 				filtered.append([call[0], call[1], call[2], call[1]/price * 100, call[3], (call[0] - price) / price, percent_return ])
 	else:
 		print("Unknown type %s" % type)
