@@ -52,8 +52,10 @@ def is_setting(setting):
 	return setting.upper() in _settings.keys()
 	
 def print_settings():
+	longest_key = max(map(len, _settings.keys()))
+	longest_val = max(map(len, map(str, map(lambda val: val[0], _settings.values()))))
 	for setting, val in _settings.items():
-		print("%s: %s    %s" % (setting, str(val[0]), val[2]))
+		print("{0:>{lkey}} : {1:<{lval}}  {2}".format(setting, str(val[0]), val[2], lkey=longest_key, lval=longest_val))
 		
 def save_settings(file):
 	# Store to dictionary on disk
