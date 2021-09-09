@@ -90,29 +90,37 @@ def print_invalid_error(ticker):
 	print(err_string)
 	print(line_string, "\n")
 
+_help_dictionary = { "help" : "Print available commands",
+	"options [$STOCKS, LISTS]" : ["Fetch and print options for all tickers or lists provided as arguments.", "If no arguments are provided, fetch all lists."],
+	"spreads [$STOCKS, LISTS]" : ["Fetch and print option spreads for all tickers or lists provided as arguments.", "If no arguments are provided, fetch all lists."],
+	"calendar [$STOCKS, LISTS]"	: ["Fetch and print calendar spreads for all tickers or lists provided as arguments.", "If no arguments are provided, fetch all lists."],
+	"fetch [$STOCKS, LISTS]" : ["Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments.", "If no arguments are provided, fetch all lists."],
+	"[$STOCKS]" : "Same as fetch [$STOCKS]. The first stock must start with a $",
+	"report OR daily" : "Fetch a list of daily selected stocks",
+	"create [LISTS]" : "Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.",
+	"delete [LISTS]" : "Deletes each provided list, if it exists. Asks for confirmation for non-empty lists.",
+	"refresh" : "Refresh contract months for all tickers in all lists",
+	"add LIST [$STOCKS]" : "Add all tickers from $STOCKS to LIST. Lists may not contain duplicates",
+	"remove LIST [$STOCKS]" : "Delete all tickers from $STOCKS from LIST if present",
+	"list [LISTS]" : "Print the contents of all lists from LISTS. If no lists are provided, print the contents of all lists.",
+	"list_months [LISTS]" : "Print the front contract month for all tickers in the given lists. If no lists are provided, print all lists.",
+	"dividends" : "List stocks with ex-dividend days tomorrow",
+	"settings" : "List all settings and current values",
+	"set SETTING VALUE" : "Set SETTING to VALUE, if SETTING is a valid setting (i.e. listed under 'settings')",
+	"save" : "Save lists, months, and settings to persistent storage",
+	"exit or quit" : "Exit the program" }
+
 def print_help():
-	print("""Available commands:
-	help				Print available commands
-	options [$STOCKS, LISTS]	Fetch and print options for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
-	spreads [$STOCKS, LISTS]	Fetch and print option spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
-	calendar [$STOCKS, LISTS]	Fetch and print calendar spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
-	fetch [$STOCKS, LISTS]		Fetch and print options, spreads, and calendar spreads for all tickers or lists provided as arguments.\n					If no arguments are provided, fetch all lists.
-	[$STOCKS]			Same as fetch [$STOCKS]. The first stock must start with a $
-	report OR daily			Fetch a list of daily selected stocks
-	create [LISTS]			Create a new list for each of the provided argument, if no list exists. Lists are case-sensitive.
-	delete [LISTS]			Deletes each provided list, if it exists. Asks for confirmation for non-empty lists.
-	refresh				Refresh contract months for all tickers in all lists
-	add LIST [$STOCKS]		Add all tickers from $STOCKS to LIST. Lists may not contain duplicates
-	remove LIST [$STOCKS]		Delete all tickers from $STOCKS from LIST if present
-	list [LISTS]			Print the contents of all lists from LISTS. If no lists are provided, print the contents of all lists.
-	list_months [LISTS]		Print the front contract month for all tickers in the given lists. If no lists are provided, print all lists.
-	dividends			List stocks with ex-dividend days tomorrow
-	settings			List all settings and current values
-	set SETTING VALUE		Set SETTING to VALUE, if SETTING is a valid setting (i.e. listed under 'settings')
-	save				Save lists, months, and settings to persistent storage
-	exit or quit			Exit the program
-		
-	For commands which take multiple arguments of the same type (e.g. options, spreads, fetch, create, list), arguments may be separated by commas or spaces.""")
+	print("Available commands:")
+	longest_cmd = max(map(len, _help_dictionary.keys()))
+	for cmd, helptext in _help_dictionary.items():
+		if isinstance(helptext, list):
+			print(" {0:<{lcmd}} {1}".format(cmd, helptext[0], lcmd=longest_cmd))
+			for helptextline in helptext[1:]:
+				print(" {0:<{lcmd}} {1}".format("", helptextline, lcmd=longest_cmd))
+		else:
+			print(" {0:<{lcmd}} {1}".format(cmd, helptext, lcmd=longest_cmd))
+	print("For commands which take multiple arguments of the same type (e.g. options, spreads, fetch, create, list), arguments may be separated by commas or spaces.")
 
 
 """Tickers can be separated by spaces or commas, upper or lowercase, and may appear with or without a leading $. Lists are case sensitive. To get a ticker with the same name as one of your lists, change the case of the ticker or prefix it with a $. All arguments prefixed with $ are treated as tickers."""
