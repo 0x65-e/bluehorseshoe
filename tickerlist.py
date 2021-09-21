@@ -3,9 +3,9 @@ class TickerList:
     def __init__(self, name, iterable=None):
         self._name = name
         if iterable != None:
-            self._list = list(iterable)
+            self._list = set(iterable)
         else:
-            self._list = list()
+            self._list = set()
 
     def add_symbols(self, symbols):
         """Add the given symbols to the list. All instances of '$' are stripped out, and empty strings are never added to the list."""
