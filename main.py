@@ -107,7 +107,7 @@ _help_dictionary = { "help" : "Print available commands",
 	"dividends" : "List stocks with ex-dividend days tomorrow",
 	"settings" : "List all settings and current values",
 	"set SETTING VALUE" : "Set SETTING to VALUE, if SETTING is a valid setting (i.e. listed under 'settings')",
-	"save" : "Save lists, months, and settings to persistent storage",
+	"save" : "Save lists, months, and settings to persistent storage. This is done automatically at exit, but save may help in cases where crashes occur.",
 	"exit or quit" : "Exit the program" }
 
 def print_help():
@@ -218,12 +218,16 @@ def parse(cmd):
 	global month_csv_modified
 	global symbol_csv_modified
 	global setting_csv_modified
+	global symbol_month
 	if cmd.strip() == "refresh":
 		print("Refreshing contract months...")
-		# Get the next contract for each symbol
+		# Flush symbol_month and only include symbols found in some list 
+		new_symbol_month = dict()
 		for symbol in symbols:
-			if not update_months(symbol, symbol_month):
+			# TODO: Add some sort of status indicator for long requests
+			if not update_months(symbol, new_symbol_month):
 				print_invalid_error(symbol)
+		symbol_month = new_symbol_month
 			
 		month_csv_modified = True
 	elif cmd.startswith("spreads"):
@@ -396,8 +400,10 @@ if __name__ == "__main__":
 						month_csv_modified = True
 					else:
 						print_invalid_error(row[0])
-				else:
+				elif row[0] in symbols: # Only include symbols that are in some list
 					symbol_month[row[0]] = row[1:]
+				else:
+					month_csv_modified = True
 		# Refresh any symbols that had no listed contract months
 		for symbol in symbols:
 			if symbol not in symbol_month.keys() or not symbol_month[symbol]:
