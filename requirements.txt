@@ -1,3 +1,4 @@
 Js2Py
 requests
 datetime
+aiohttp
