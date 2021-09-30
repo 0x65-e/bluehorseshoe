@@ -1,3 +1,5 @@
+from aiohttp import ClientSession
+
 class TickerList:
 
     def __init__(self, name, iterable=None):
